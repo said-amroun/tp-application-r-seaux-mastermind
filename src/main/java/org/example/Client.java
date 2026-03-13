@@ -30,6 +30,24 @@ public class Client {
                 break;
             }
 
+            if (message.equals("/SCORE")) {
+                System.out.println("Scores :");
+                System.out.println(reponse);
+
+                socket.setSoTimeout(200);
+
+                try {
+                    while ((reponse = in.readLine()) != null) {
+                        System.out.println(reponse);
+                    }
+                } catch (Exception e) {
+                    // fin des scores
+                }
+
+                socket.setSoTimeout(0);
+                continue;
+            }
+
             if (reponse.equals("ERREUR_LONGUEUR")) {
                 System.out.println("Erreur : la combinaison doit contenir 4 lettres.");
                 continue;
@@ -47,11 +65,18 @@ public class Client {
             System.out.println("Correct : " + corr + " | Incorrect : " + incorr);
 
             if (corr == 4) {
+
                 System.out.println("Combinaison trouvée !");
-                break;
+
+                String demandeNom = in.readLine();
+                System.out.println(demandeNom);
+
+                String nom = clavier.readLine();
+                out.println(nom);
+
+                String confirmation = in.readLine();
+                System.out.println(confirmation);
             }
         }
-
-        socket.close();
     }
 }

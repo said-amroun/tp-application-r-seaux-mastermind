@@ -25,10 +25,12 @@ public class ServeurSelect {
 
         System.out.println("Serveur Select sur le port " + port);
 
-        Map<SocketChannel, Code> secrets = new HashMap<>();
+        Map<SocketChannel, ClientState> clients = new HashMap<>();
+        Map<String, Integer> scores = new HashMap<>();
+
         Random random = new Random();
 
-        for (;;) {   // boucle infinie
+        for (;;) {
 
             selector.select();
 
@@ -47,7 +49,7 @@ public class ServeurSelect {
                     client.configureBlocking(false);
                     client.register(selector, SelectionKey.OP_READ);
 
-                    secrets.put(client, new Code(random));
+                    clients.put(client, new ClientState(new Code(random)));
 
                     System.out.println("Client connecté");
                 }
@@ -55,20 +57,58 @@ public class ServeurSelect {
                 else if (key.isReadable()) {
 
                     SocketChannel client = (SocketChannel) key.channel();
+                    ClientState state = clients.get(client);
 
                     ByteBuffer buffer = ByteBuffer.allocate(1024);
 
                     int read = client.read(buffer);
 
                     if (read == -1) {
-                        secrets.remove(client);
+                        clients.remove(client);
                         client.close();
+                        System.out.println("Client déconnecté");
                         continue;
                     }
 
                     String msg = new String(buffer.array()).trim();
 
                     System.out.println("Reçu : " + msg);
+
+                    // Si on attend le nom du joueur
+                    if (state.attendreNom) {
+
+                        String nom = msg;
+
+                        scores.put(nom, state.tentatives);
+
+                        client.write(ByteBuffer.wrap(
+                                "Score enregistré !\n".getBytes()));
+
+                        state.secret = new Code(random);
+                        state.tentatives = 0;
+                        state.attendreNom = false;
+
+                        continue;
+                    }
+
+                    if (msg.equals("/SCORE")) {
+
+                        StringBuilder sb = new StringBuilder();
+
+                        if (scores.isEmpty()) {
+                            sb.append("Aucun score pour le moment\n");
+                        } else {
+                            for (String name : scores.keySet()) {
+                                sb.append(name)
+                                        .append(" : ")
+                                        .append(scores.get(name))
+                                        .append("\n");
+                            }
+                        }
+
+                        client.write(ByteBuffer.wrap(sb.toString().getBytes()));
+                        continue;
+                    }
 
                     if (msg.length() != 4) {
                         client.write(ByteBuffer.wrap("ERREUR_LONGUEUR\n".getBytes()));
@@ -81,7 +121,10 @@ public class ServeurSelect {
                     }
 
                     Code guess = new Code(msg);
-                    Code secret = secrets.get(client);
+
+                    state.tentatives++;
+
+                    Code secret = state.secret;
 
                     int corr = secret.numberOfColorsWithCorrectPosition(guess);
                     int incorr = secret.numberOfColorsWithIncorrectPosition(guess);
@@ -91,8 +134,13 @@ public class ServeurSelect {
                     client.write(ByteBuffer.wrap(rep.getBytes()));
 
                     if (corr == 4) {
+
+                        client.write(ByteBuffer.wrap(
+                                "GAGNE ! Entrez votre nom :\n".getBytes()));
+
+                        state.attendreNom = true;
+
                         System.out.println("Combinaison trouvée !");
-                        secrets.put(client, new Code(random));
                     }
                 }
             }
