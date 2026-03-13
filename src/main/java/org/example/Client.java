@@ -61,8 +61,11 @@ public class Client {
             String[] decoupe = reponse.split(" ");
             int corr = Integer.parseInt(decoupe[0]);
             int incorr = Integer.parseInt(decoupe[1]);
+            int tentatives = Integer.parseInt(decoupe[2]);
 
-            System.out.println("Correct : " + corr + " | Incorrect : " + incorr);
+            System.out.println("Correct : " + corr +
+                    " | Incorrect : " + incorr +
+                    " | Tentatives : " + tentatives);
 
             if (corr == 4) {
 

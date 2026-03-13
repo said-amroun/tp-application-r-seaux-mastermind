@@ -51,7 +51,7 @@ public class ServeurSelect {
 
                     clients.put(client, new ClientState(new Code(random)));
 
-                    System.out.println("Client connecté");
+                    System.out.println("Client connecté | Total = " + clients.size());
                 }
 
                 else if (key.isReadable()) {
@@ -66,7 +66,7 @@ public class ServeurSelect {
                     if (read == -1) {
                         clients.remove(client);
                         client.close();
-                        System.out.println("Client déconnecté");
+                        System.out.println("Client déconnecté | Total = " + clients.size());
                         continue;
                     }
 
@@ -74,7 +74,6 @@ public class ServeurSelect {
 
                     System.out.println("Reçu : " + msg);
 
-                    // Si on attend le nom du joueur
                     if (state.attendreNom) {
 
                         String nom = msg;
@@ -129,7 +128,7 @@ public class ServeurSelect {
                     int corr = secret.numberOfColorsWithCorrectPosition(guess);
                     int incorr = secret.numberOfColorsWithIncorrectPosition(guess);
 
-                    String rep = corr + " " + incorr + "\n";
+                    String rep = corr + " " + incorr + " " + state.tentatives + "\n";
 
                     client.write(ByteBuffer.wrap(rep.getBytes()));
 
